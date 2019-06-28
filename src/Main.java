@@ -1,17 +1,32 @@
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 
+class UserSend implements Serializable {
+    String username ;
+    String password ;
+    byte[] avatar;
+    UserSend(String username , String password , byte[] avatar) {
+        this.username = username;
+        this.password = password;
+        this.avatar =  avatar ;
+    }
+}
 
 class User implements Serializable {
     static ArrayList <User> users;
     String username ;
     String password ;
-    User(String username , String password) {
+    byte[] avatar;
+    User(String username , String password , byte[] avatar) {
         this.username = username;
         this.password = password;
+        this.avatar =  avatar ;
         users.add(this) ;
         save();
     }
@@ -41,7 +56,6 @@ class User implements Serializable {
 
 
 class ClientHandler extends Thread{
-    static ArrayList<ClientHandler>  Clients = new ArrayList<>();
     Socket s ;
     ObjectOutputStream oos ;
     ObjectInputStream ois;
@@ -76,7 +90,6 @@ class ClientHandler extends Thread{
             oos = new ObjectOutputStream(s.getOutputStream());
             String[] a = (String[])ois.readObject();
             System.out.println(a[0]);
-            oos.flush();
 
             if(a[0].equals("Login")) {
                 System.out.println("Check For Login");
@@ -86,6 +99,13 @@ class ClientHandler extends Thread{
                 if (user !=null) {
                     System.out.println("Found");
                     oos.writeBoolean(true);
+                    oos.flush();
+                    oos.writeObject(user.username);
+                    oos.flush();
+                    oos.writeObject(user.password);
+                    oos.flush();
+                    oos.writeObject(user.avatar);
+//                    System.out.println(Arrays.toString(user.avatar));
                     oos.flush();
                 }
                 else {
@@ -100,8 +120,25 @@ class ClientHandler extends Thread{
                 System.out.println("Request For Register");
                 String username = a[1];
                 String password = a[2];
-                User newUser = new User(username,password);
+                byte[] imgByte = (byte[])ois.readObject();
+                ByteArrayInputStream bis = new ByteArrayInputStream(imgByte);
+                BufferedImage bImage2 = ImageIO.read(bis);
+                if (bImage2 ==null) {
+                    bImage2 = ImageIO.read(new File("avatar.jpg"));
+                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                    ImageIO.write(bImage2, "jpg", bos );
+                    imgByte= bos.toByteArray();
+                    System.out.println("null image");
+                }
+                System.out.println(Arrays.toString(imgByte));
+                User newUser = new User(username,password , imgByte);
                 oos.writeBoolean(true);
+                oos.flush();
+                oos.writeObject(newUser.username);
+                oos.flush();
+                oos.writeObject(newUser.password);
+                oos.flush();
+                oos.writeObject(newUser.avatar);
                 oos.flush();
 
             }
@@ -134,7 +171,6 @@ public class Main {
             Socket cs =  ss.accept();
             System.out.println("Client Connected");
             ClientHandler newClient =  new ClientHandler(cs);
-            ClientHandler.Clients.add(newClient);
             newClient.start();
 
         }
