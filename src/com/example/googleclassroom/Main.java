@@ -1,3 +1,5 @@
+package com.example.googleclassroom;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
@@ -5,33 +7,12 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.UUID;
 
 
-class UserSend implements Serializable {
-    String username ;
-    String password ;
-    byte[] avatar;
-    UserSend(String username , String password , byte[] avatar) {
-        this.username = username;
-        this.password = password;
-        this.avatar =  avatar ;
-    }
-}
-
-class User implements Serializable {
+class DataBase {
     static ArrayList <User> users;
-    String username ;
-    String password ;
-    byte[] avatar;
-    User(String username , String password , byte[] avatar) {
-        this.username = username;
-        this.password = password;
-        this.avatar =  avatar ;
-        users.add(this) ;
-        save();
-    }
-
-
 
     // Read Users From File
     static {
@@ -43,7 +24,7 @@ class User implements Serializable {
     }
 
     // Save Users in File
-    static private void save() {
+    static  void save() {
         try (ObjectOutputStream outputStream = new ObjectOutputStream(new FileOutputStream("users.ser"))) {
             outputStream.writeObject(users);
         } catch (IOException e) {
@@ -55,6 +36,25 @@ class User implements Serializable {
 }
 
 
+
+
+class User implements Serializable {
+    private static final long serialVersionUID = 7829136421241571165L;
+    String username ;
+    String password ;
+    byte[] avatar;
+    ArrayList<Class> classes = new ArrayList<>() ;
+    User(String username , String password , byte[] avatar) {
+        this.username = username;
+        this.password = password;
+        this.avatar =  avatar ;
+    }
+
+
+
+}
+
+
 class ClientHandler extends Thread{
     Socket s ;
     ObjectOutputStream oos ;
@@ -62,18 +62,29 @@ class ClientHandler extends Thread{
     DataOutputStream dos ;
 
 
-    // Find The User
+    // Find The com.example.googleclassroom.User
     static private User findUser(String username, String password) {
-        for (User user:User.users) {
+        for (User user:DataBase.users) {
             if (user.username.equals(username) && user.password.equals(password))
                 return user ;
         }
         return null ;
     }
 
+    static private Class findClass(String code) {
+        for (User user:DataBase.users ) {
+            for (Class cls:user.classes) {
+                if (cls.code.equals(code))
+                    return cls ;
+            }
+        }
+        return null ;
+
+    }
+
     // Check if Username Exists
     static private Boolean UserNameCheck(String username) {
-        for(User user:User.users) {
+        for(User user:DataBase.users) {
             if (user.username.equals(username))
                 return false;
         }
@@ -100,12 +111,7 @@ class ClientHandler extends Thread{
                     System.out.println("Found");
                     oos.writeBoolean(true);
                     oos.flush();
-                    oos.writeObject(user.username);
-                    oos.flush();
-                    oos.writeObject(user.password);
-                    oos.flush();
-                    oos.writeObject(user.avatar);
-//                    System.out.println(Arrays.toString(user.avatar));
+                    oos.writeObject(user);
                     oos.flush();
                 }
                 else {
@@ -132,13 +138,12 @@ class ClientHandler extends Thread{
                 }
                 System.out.println(Arrays.toString(imgByte));
                 User newUser = new User(username,password , imgByte);
+                DataBase.users.add(newUser) ;
+                DataBase.save();
+
                 oos.writeBoolean(true);
                 oos.flush();
-                oos.writeObject(newUser.username);
-                oos.flush();
-                oos.writeObject(newUser.password);
-                oos.flush();
-                oos.writeObject(newUser.avatar);
+                oos.writeObject(newUser);
                 oos.flush();
 
             }
@@ -147,6 +152,60 @@ class ClientHandler extends Thread{
                 String username = a[1];
                 oos.writeBoolean(UserNameCheck(username));
                 oos.flush();
+            }
+            else if (a[0].equals("AddClass")) {
+                String username = a[1];
+                String password = a[2];
+                User user = findUser(username , password);
+                Class clas = (Class) ois.readObject();
+                if (user !=null) {
+                    clas.teachers.add(user) ;
+                    clas.code =  UUID.randomUUID().toString() ;
+                    System.out.println(clas.code);
+                    user.classes.add(clas);
+                    DataBase.save();
+                    oos.writeBoolean(true);
+                    oos.flush();
+                }
+
+            }
+            else if (a[0].equals("Refresh")) {
+                String username = a[1];
+                String password = a[2];
+                User user = findUser(username , password);
+                if (user !=null) {
+                    oos.writeObject(user);
+                    oos.flush();
+                }
+            }
+            else if (a[0].equals("JoinClass")) {
+                String username = a[1];
+                String password = a[2];
+                User user = findUser(username, password);
+                if (user!=null) {
+                    String code = (String)ois.readObject();
+                    Class cls = findClass(code);
+                    if (cls !=null) {
+                        boolean check= false ;
+                        for (User usr:cls.teachers)
+                            if (usr.username.equals(user.username))
+                                check = true ;
+                        if (!check) {
+                            if (!cls.students.contains(user))
+                                cls.students.add(user);
+                            if (!user.classes.contains(cls))
+                                user.classes.add(cls);
+                        }
+                        oos.writeBoolean(true);
+                        oos.flush();
+                        oos.writeObject(cls);
+                        oos.flush();
+                    }
+                    else {
+                        oos.writeBoolean(false);
+                        oos.flush();
+                    }
+                }
             }
 
 
@@ -157,7 +216,9 @@ class ClientHandler extends Thread{
 
         }catch (Exception e){
             e.printStackTrace();
+            DataBase.save();
         }
+
         System.out.println("Client Exited");
     }
 }
