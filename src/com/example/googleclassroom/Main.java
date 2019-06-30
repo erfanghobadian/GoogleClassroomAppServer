@@ -156,16 +156,20 @@ class ClientHandler extends Thread{
             else if (a[0].equals("AddClass")) {
                 String username = a[1];
                 String password = a[2];
+                Class clas = new Class(a[3],a[4],a[5]) ;
                 User user = findUser(username , password);
-                Class clas = (Class) ois.readObject();
                 if (user !=null) {
                     clas.teachers.add(user) ;
                     clas.code =  UUID.randomUUID().toString() ;
                     System.out.println(clas.code);
                     user.classes.add(clas);
                     DataBase.save();
+                    System.out.println(clas.name);
                     oos.writeBoolean(true);
                     oos.flush();
+                    oos.writeObject(clas);
+                    oos.flush();
+
                 }
 
             }
