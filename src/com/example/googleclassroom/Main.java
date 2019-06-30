@@ -11,6 +11,23 @@ import java.util.HashSet;
 import java.util.UUID;
 
 
+class Assignment implements Serializable {
+    private static final long serialVersionUID = 7829136421241571165L;
+
+
+}
+
+class Topic implements Serializable {
+    private static final long serialVersionUID = 7829136421241571165L;
+
+    String name ;
+    ArrayList <Assignment> assignments = new ArrayList<>();
+    Topic(String name) {
+        this.name = name ;
+    }
+}
+
+
 class Class implements Serializable {
     private static final long serialVersionUID = 7829136421241571165L;
     String name ;
@@ -19,6 +36,7 @@ class Class implements Serializable {
     ArrayList <User> teachers = new ArrayList<>() ;
     String code;
     ArrayList<User> students = new ArrayList<>() ;
+    ArrayList<Topic> topics = new ArrayList<>() ;
     Class(String name , String room , String des) {
         this.name = name;
         this.room = room ;
@@ -240,6 +258,29 @@ class ClientHandler extends Thread{
                     user.classes.remove(cls);
 
                 }
+            }
+            else if (a[0].equals("RefreshCLW" )) {
+                String username = a[1];
+                String password = a[2];
+                String code = a[3];
+                User user = findUser(username,password);
+                Class cls = findClass(code);
+                if (user!=null && cls!=null) {
+                    oos.writeObject(user);
+                    oos.flush();
+                    oos.writeObject(cls);
+                    oos.flush();
+                }
+            }
+            else if (a[0].equals("CreateTopic")) {
+                String code = a[1];
+                String name = a[2];
+                Topic topic = new Topic(name);
+                Class cls = findClass(code);
+                if (cls!=null){
+                    cls.topics.add(topic);
+                }
+
             }
 
 
