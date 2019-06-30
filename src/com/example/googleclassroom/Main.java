@@ -263,6 +263,9 @@ class ClientHandler extends Thread{
                 String username = a[1];
                 String password = a[2];
                 String code = a[3];
+                System.out.println(username);
+                System.out.println(password);
+                System.out.println(code);
                 User user = findUser(username,password);
                 Class cls = findClass(code);
                 if (user!=null && cls!=null) {
@@ -281,6 +284,18 @@ class ClientHandler extends Thread{
                     cls.topics.add(topic);
                 }
 
+            }
+            else if (a[0].equals("RemoveTopicFromClass")) {
+                String code = a[1];
+                String name = a[2];
+                Class myClass = findClass(code);
+                for(Topic t :myClass.topics) {
+                    if (t.name.equals(name)) {
+                        myClass.topics.remove(t);
+                        break;
+                    }
+
+                }
             }
 
 
