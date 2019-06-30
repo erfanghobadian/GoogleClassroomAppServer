@@ -11,6 +11,24 @@ import java.util.HashSet;
 import java.util.UUID;
 
 
+class Class implements Serializable {
+    private static final long serialVersionUID = 7829136421241571165L;
+    String name ;
+    String room ;
+    String des ;
+    ArrayList <User> teachers = new ArrayList<>() ;
+    String code;
+    ArrayList<User> students = new ArrayList<>() ;
+    Class(String name , String room , String des) {
+        this.name = name;
+        this.room = room ;
+        this.des = des  ;
+    }
+
+
+}
+
+
 class DataBase {
     static ArrayList <User> users;
 
