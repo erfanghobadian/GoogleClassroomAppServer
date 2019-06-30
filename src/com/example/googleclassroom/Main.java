@@ -229,6 +229,18 @@ class ClientHandler extends Thread{
                     }
                 }
             }
+            else if (a[0].equals("RemoveFromClass")) {
+                String username = a[1];
+                String password = a[2];
+                String code = a[3] ;
+                User user = findUser(username,password);
+                if (user!=null) {
+                    Class cls = findClass(code);
+                    cls.students.remove(user);
+                    user.classes.remove(cls);
+
+                }
+            }
 
 
 
