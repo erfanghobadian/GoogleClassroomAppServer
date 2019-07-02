@@ -297,6 +297,31 @@ class ClientHandler extends Thread{
 
                 }
             }
+            else if (a[0].equals("AddStudentToClass")) {
+                String username = a[1] ;
+                String code = a[2];
+                System.out.println(username);
+
+                User user = null ;
+                for (User us:DataBase.users) {
+                    if (us.username.equals(username))
+                        user = us ;
+                }
+                if (user == null){
+                    oos.writeBoolean(false);
+                    oos.flush();
+                }
+                else {
+                    oos.writeBoolean(true);
+                    oos.flush();
+                    Class cls = findClass(code);
+                    if (cls!=null) {
+                        cls.students.add(user);
+                        user.classes.add(cls);
+                    }
+                }
+            }
+
 
 
 
