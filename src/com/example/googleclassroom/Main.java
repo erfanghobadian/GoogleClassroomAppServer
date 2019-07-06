@@ -5,14 +5,17 @@ import java.awt.image.BufferedImage;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.UUID;
+import java.util.*;
 
 
 class Assignment implements Serializable {
     private static final long serialVersionUID = 7829136421241571165L;
+    String title ;
+    String des ;
+    int points ;
+    byte[] attach ;
+    Calendar due ;
+
 
 
 }
@@ -198,6 +201,7 @@ class ClientHandler extends Thread{
                     clas.teachers.add(user) ;
                     clas.code =  UUID.randomUUID().toString() ;
                     System.out.println(clas.code);
+                    clas.topics.add(new Topic("No Topic"));
                     user.classes.add(clas);
                     DataBase.save();
                     System.out.println(clas.name);
@@ -207,6 +211,7 @@ class ClientHandler extends Thread{
                     oos.flush();
 
                 }
+                DataBase.save();
 
             }
             else if (a[0].equals("Refresh")) {
@@ -246,6 +251,8 @@ class ClientHandler extends Thread{
                         oos.flush();
                     }
                 }
+                DataBase.save();
+
             }
             else if (a[0].equals("RemoveFromClass")) {
                 String username = a[1];
@@ -258,6 +265,8 @@ class ClientHandler extends Thread{
                     user.classes.remove(cls);
 
                 }
+                DataBase.save();
+
             }
             else if (a[0].equals("RefreshCLW" )) {
                 String username = a[1];
@@ -283,6 +292,25 @@ class ClientHandler extends Thread{
                 if (cls!=null){
                     cls.topics.add(topic);
                 }
+                DataBase.save();
+
+
+            }
+            else if (a[0].equals("EditTopic")) {
+                String code = a[1];
+                String tname = a[2];
+                String name = a[3] ;
+                Class cls = findClass(code);
+                if (cls!=null){
+                    for (Topic t:cls.topics){
+                        if (t.name.equals(tname)) {
+                            t.name = name ;
+                            break;
+                        }
+                    }
+                }
+                DataBase.save();
+
 
             }
             else if (a[0].equals("RemoveTopicFromClass")) {
@@ -296,6 +324,8 @@ class ClientHandler extends Thread{
                     }
 
                 }
+                DataBase.save();
+
             }
             else if (a[0].equals("AddStudentToClass")) {
                 String username = a[1] ;
@@ -304,8 +334,11 @@ class ClientHandler extends Thread{
 
                 User user = null ;
                 for (User us:DataBase.users) {
-                    if (us.username.equals(username))
-                        user = us ;
+                    if (us.username.equals(username)) {
+                        user = us;
+                        break;
+                    }
+
                 }
                 if (user == null){
                     oos.writeBoolean(false);
@@ -320,6 +353,88 @@ class ClientHandler extends Thread{
                         user.classes.add(cls);
                     }
                 }
+                DataBase.save();
+
+            }
+            else if (a[0].equals("AddTeacherToClass")) {
+                String username = a[1];
+                String code = a[2];
+                System.out.println(code);
+                Class myclass = findClass(code);
+                if (myclass!=null) {
+                    User user = null ;
+                    for (User us:DataBase.users) {
+                        if(us.username.equals(username)) {
+                            user = us ;
+                            break;
+                        }
+                    }
+                    if(user!=null) {
+                        myclass.teachers.add(user);
+                        user.classes.add(myclass);
+                        oos.writeBoolean(true);
+                        oos.flush();
+
+                    }
+                    else {
+                        oos.writeBoolean(false);
+                        oos.flush();
+                    }
+                }
+                DataBase.save();
+
+            }
+            else if (a[0].equals("EditClass")) {
+                String code = a[1];
+                String clsname = a[2];
+                String clsdes = a[3];
+                String clsroom = a[4];
+                Class myclass = findClass(code) ;
+                if (myclass!=null) {
+                    myclass.name = clsname ;
+                    myclass.des  = clsdes ;
+                    myclass.room = clsroom ;
+                    oos.writeObject(myclass);
+                    oos.flush();
+                }
+                DataBase.save();
+            }
+            else if (a[0].equals("CreateAssignment")) {
+                String code  = a[1];
+                String topicname = a[2];
+                String asstitle = a[3] ;
+                Class cls = findClass(code);
+                int year = Integer.parseInt(a[4]);
+                int month = Integer.parseInt(a[5]);
+                int day = Integer.parseInt(a[6]);
+                int hour = Integer.parseInt(a[7]);
+                int min = Integer.parseInt(a[8]);
+                String des = a[9] ;
+                byte[] attach = (byte[])ois.readObject() ;
+                int points = Integer.parseInt(a[10]) ;
+                Calendar due = new GregorianCalendar();
+                due.set(year,month,day,hour,min);
+                Assignment ass = new Assignment() ;
+                ass.title = asstitle ;
+                ass.due = due ;
+                ass.des = des ;
+                ass.points = points ;
+                ass.attach = attach ;
+                System.out.println(ass.des);
+                System.out.println(ass.points);
+                if  (ass.attach !=null)
+                    System.out.println(Arrays.toString(ass.attach));
+
+                for (Topic t :cls.topics) {
+                    if (t.name.equals(topicname)) {
+                        System.out.println(t.name);
+                        t.assignments.add(ass);
+                        break;
+                    }
+                }
+                System.out.println(ass.title);
+                DataBase.save();
+
             }
 
 
