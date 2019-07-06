@@ -8,6 +8,14 @@ import java.net.Socket;
 import java.util.*;
 
 
+class HomeWork implements Serializable {
+    private static final long serialVersionUID = 7829136421241571165L;
+    String text ;
+    User student ;
+    byte [] attach ;
+    int score ;
+}
+
 class Assignment implements Serializable {
     private static final long serialVersionUID = 7829136421241571165L;
     String title ;
@@ -15,7 +23,9 @@ class Assignment implements Serializable {
     int points ;
     byte[] attach ;
     Calendar due ;
+    Topic topic ;
 
+    HashMap<String,HomeWork> works = new HashMap<>();
 
 
 }
@@ -428,13 +438,183 @@ class ClientHandler extends Thread{
                 for (Topic t :cls.topics) {
                     if (t.name.equals(topicname)) {
                         System.out.println(t.name);
+                        ass.topic = t;
                         t.assignments.add(ass);
+
                         break;
                     }
                 }
                 System.out.println(ass.title);
                 DataBase.save();
 
+            }
+            else if (a[0].equals("EditAssignment")) {
+                String code  = a[1];
+                String topicname = a[2];
+                String asstitle = a[3] ;
+                Class cls = findClass(code);
+                int year = Integer.parseInt(a[4]);
+                int month = Integer.parseInt(a[5]);
+                int day = Integer.parseInt(a[6]);
+                int hour = Integer.parseInt(a[7]);
+                int min = Integer.parseInt(a[8]);
+                String des = a[9] ;
+                byte[] attach = (byte[])ois.readObject() ;
+                int points = Integer.parseInt(a[10]) ;
+                String ctname = a[11];
+                String cassname = a[12] ;
+                Calendar due = new GregorianCalendar();
+                due.set(year,month,day,hour,min);
+
+                Topic t2 = null ;
+                for (Topic t :cls.topics) {
+                    if (t.name.equals(ctname)) {
+                        System.out.println(t.name);
+                        t2 = t ;
+                        break;
+                    }
+                }
+                Assignment ass = null ;
+                for (Assignment ass2 :t2.assignments) {
+                    if(ass2.title.equals(cassname)) {
+                        ass = ass2 ;
+                        break;
+                    }
+                }
+
+                ass.title = asstitle ;
+                ass.due = due ;
+                ass.des = des ;
+                ass.points = points ;
+                ass.attach = attach ;
+                System.out.println(ass.des);
+                System.out.println(ass.points);
+                if  (ass.attach !=null)
+                    System.out.println(Arrays.toString(ass.attach));
+
+                for (Topic t :cls.topics) {
+                    if (t.name.equals(topicname)) {
+                        System.out.println(t.name);
+                        ass.topic = t;
+                        t.assignments.add(ass);
+
+                        break;
+                    }
+                }
+                System.out.println(ass.title);
+                t2.assignments.remove(ass)  ;
+                DataBase.save();
+
+            }
+            else if (a[0].equals("RemoveAss")) {
+                String code = a[1];
+                String tname = a[2] ;
+                String assname = a[3];
+                Topic t2  = null;
+                Class myClass = findClass(code) ;
+                for (Topic t :myClass.topics) {
+                    if (t.name.equals(tname)) {
+                        t2 = t ;
+                        System.out.println("hey");
+                        break;
+                    }
+                }
+                for (Assignment ass : t2.assignments) {
+                    if (ass.title.equals(assname)) {
+                        t2.assignments.remove(ass) ;
+                        System.out.println("rem");
+                        break;
+                    }
+                }
+                DataBase.save();
+            }
+            else if (a[0].equals("AddHomeWork")) {
+                String code = a[1] ;
+                String username = a[2];
+                String password = a[3];
+                String tname = a[4];
+                String assname = a[5];
+                String text  = a[6] ;
+                byte[] attach = (byte[])ois.readObject() ;
+                Class cls = findClass(code) ;
+                User user = findUser(username,password) ;
+                Topic t2 =null ;
+                for (Topic t:cls.topics ) {
+                    if (t.name.equals(tname)) {
+                        t2 = t ;
+                        break;
+                    }
+                }
+                Assignment ass = null ;
+                for (Assignment ass2 : t2.assignments) {
+                    if (ass2.title.equals(assname)) {
+                        ass = ass2 ;
+                        break;
+                    }
+                }
+
+                HomeWork hm = new HomeWork();
+                hm.text = text ;
+                hm.attach = attach ;
+                hm.student = user ;
+                ass.works.put(user.username , hm) ;
+                DataBase.save();
+            }
+            else if (a[0].equals("RefreshSTASS")) {
+                String username = a[1];
+                String password = a[2];
+                String code = a[3] ;
+                String tname = a[4] ;
+                String asst = a[5] ;
+                User  user = findUser(username, password) ;
+                Class cls = findClass(code) ;
+                Topic t = null ;
+                Assignment ass = null ;
+                for (Topic t2: cls.topics) {
+                    if (t2.name.equals(tname)) {
+                        t = t2 ;
+                        break;
+                    }
+                }
+                for (Assignment ass2 :t.assignments) {
+                    if (ass2.title.equals(asst)) {
+                        ass = ass2 ;
+                        break;
+                    }
+                }
+
+                oos.writeObject(user);
+                oos.flush();
+                oos.writeObject(cls);
+                oos.flush();
+                oos.writeObject(ass);
+                oos.flush();
+                DataBase.save();
+            }
+            else if (a[0].equals("MarkStudent")) {
+                String code = a[1];
+                String tname = a[2];
+                String asst = a[3] ;
+                String username = a[4] ;
+                int point = Integer.parseInt(a[5]) ;
+                Class cls = findClass(code) ;
+                Topic t = null ;
+                Assignment ass = null ;
+                for (Topic t2: cls.topics) {
+                    if (t2.name.equals(tname)) {
+                        t = t2 ;
+                        break;
+                    }
+                }
+
+                for (Assignment ass2 : t.assignments) {
+                    if (ass2.title.equals(asst)) {
+                        ass = ass2;
+                        break;
+                    }
+                }
+                ass.works.get(username).score = point ;
+                DataBase.save();
             }
 
 
