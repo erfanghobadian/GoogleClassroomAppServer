@@ -108,7 +108,6 @@ class ClientHandler extends Thread{
     Socket s ;
     ObjectOutputStream oos ;
     ObjectInputStream ois;
-    DataOutputStream dos ;
 
 
     // Find The com.example.googleclassroom.User
